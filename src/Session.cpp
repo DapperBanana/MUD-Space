@@ -1,6 +1,7 @@
 #include "Session.h"
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 
 Session::Session(std::shared_ptr<tcp::socket> socket)
     : socket_(std::move(socket))
@@ -26,7 +27,8 @@ void Session::do_read()
 
             std::string input(read_buffer_, length);
             std::cout << "Received: " << input << std::endl;
-            do_write(input + "\r\n> ");
+            process_command(input);
+            do_write("> ");
             do_read();
         });
 }
@@ -42,4 +44,21 @@ void Session::do_write(const std::string& msg)
                 std::cout << "Error writing to client" << std::endl;
             }
         });
+}
+
+void Session::process_command(const std::string& input)
+{
+    std::stringstream ss(input);
+    std::string command;
+    ss >> command;
+
+    if (command == "look") {
+        do_write("You look around.\r\n");
+    } else if (command == "say") {
+        std::string message;
+        std::getline(ss, message);
+        do_write("You say:" + message + "\r\n");
+    } else {
+        do_write("Unknown command.\r\n");
+    }
 }
