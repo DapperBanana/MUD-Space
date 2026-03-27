@@ -21,8 +21,7 @@ void Server::handle_accept(std::shared_ptr<tcp::socket> socket,
 {
     if (!error) {
         std::make_shared<Session>(std::move(socket))->start();
-        start_accept(); // Accept next connection
-    } else {
-        // Handle error (e.g., log it)
     }
+
+    start_accept();
 }
