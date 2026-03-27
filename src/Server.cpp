@@ -1,4 +1,5 @@
 #include "Server.h"
+#include "Session.h"
 
 Server::Server(boost::asio::io_context& io_context, unsigned short port)
     : io_context_(io_context),
@@ -19,16 +20,9 @@ void Server::handle_accept(std::shared_ptr<tcp::socket> socket,
                            const boost::system::error_code& error)
 {
     if (!error) {
-        std::string welcome = "Welcome to MUD-Space!\r\n";
-        boost::asio::async_write(*socket,
-            boost::asio::buffer(welcome),
-            [socket](const boost::system::error_code&, std::size_t) {
-                // connection handed off, will expand with Session later
-            });
-        std::cout << "New connection from: "
-                  << socket->remote_endpoint().address().to_string()
-                  << std::endl;
+        std::make_shared<Session>(std::move(socket))->start();
+        start_accept(); // Accept next connection
+    } else {
+        // Handle error (e.g., log it)
     }
-
-    start_accept();
 }
