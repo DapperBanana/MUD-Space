@@ -1,4 +1,5 @@
 #include "Session.h"
+#include "CommandParser.h"
 #include <iostream>
 #include <algorithm>
 #include <sstream>
@@ -25,40 +26,59 @@ void Session::do_read()
                 return;
             }
 
-            std::string input(read_buffer_, length);
-            std::cout << "Received: " << input << std::endl;
-            process_command(input);
-            do_write("> ");
+            std::string input(read_buffer_.data(), length);
+            handle_input(input);
             do_read();
         });
 }
 
-void Session::do_write(const std::string& msg)
+void Session::handle_input(const std::string& input)
 {
-    auto self = shared_from_this();
-    boost::asio::async_write(
-        *socket_,
-        boost::asio::buffer(msg),
-        [this, self](boost::system::error_code ec, std::size_t /*length*/) {
-            if (ec) {
-                std::cout << "Error writing to client" << std::endl;
-            }
-        });
+    ParsedCommand cmd = CommandParser::parse(input);
+
+    if (cmd.empty()) {
+        do_write("> ");
+        return;
+    }
+
+    if (cmd.verb == "quit" || cmd.verb == "exit") {
+        do_write("Goodbye!\r\n");
+        socket_->close();
+        return;
+    }
+
+    if (cmd.verb == "say" && !cmd.args.empty()) {
+        std::string message;
+        for (size_t i = 0; i < cmd.args.size(); ++i) {
+            if (i > 0) message += " ";
+            message += cmd.args[i];
+        }
+        do_write("You say: " + message + "\r\n> ");
+        return;
+    }
+
+    if (cmd.verb == "look") {
+        do_write("You see nothing but the void of space.\r\n> ");
+        return;
+    }
+
+    if (cmd.verb == "help") {
+        do_write("Commands: look, say <msg>, help, quit\r\n> ");
+        return;
+    }
+
+    do_write("Unknown command: " + cmd.verb + "\r\n> ");
 }
 
-void Session::process_command(const std::string& input)
+void Session::do_write(const std::string& message)
 {
-    std::stringstream ss(input);
-    std::string command;
-    ss >> command;
-
-    if (command == "look") {
-        do_write("You look around.\r\n");
-    } else if (command == "say") {
-        std::string message;
-        std::getline(ss, message);
-        do_write("You say:" + message + "\r\n");
-    } else {
-        do_write("Unknown command.\r\n");
-    }
+    auto self = shared_from_this();
+    auto buf = std::make_shared<std::string>(message);
+    boost::asio::async_write(*socket_,
+        boost::asio::buffer(*buf),
+        [this, self, buf](const boost::system::error_code& ec, std::size_t) {
+            if (ec) {
+                std::cerr << "Write error: " << ec.message() << std::endl;
+            }
+        });
 }
