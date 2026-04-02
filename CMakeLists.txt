@@ -1,26 +1,19 @@
-cmake_minimum_required(VERSION 3.14)
-project(MUD-Space VERSION 0.1.0 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.16)
+project(MUD-Space)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Boost REQUIRED COMPONENTS system)
 
-add_executable(MUD-Space
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+add_executable(mud-space
     MUD-Space.cpp
     src/Server.cpp
+    src/Session.cpp
+    src/CommandParser.cpp
 )
 
-target_include_directories(MUD-Space PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/src
-    ${Boost_INCLUDE_DIRS}
-)
-
-target_link_libraries(MUD-Space PRIVATE
-    Boost::system
-)
-
-if(UNIX)
-    target_link_libraries(MUD-Space PRIVATE pthread)
-endif()
+target_link_libraries(mud-space ${Boost_LIBRARIES} pthread)
