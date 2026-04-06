@@ -27,40 +27,27 @@ void Session::do_read()
                 std::cout << "Client disconnected" << std::endl;
                 return;
             }
-
-            std::string input(read_buffer_, length);
-            ParsedCommand cmd = parser_.parse(input);
-            std::string response = dispatcher_.dispatch(*this, cmd);
-
-            if (disconnecting_) {
-                do_write(response);
-                return;
-            }
-
-            if (!response.empty()) {
-                do_write(response + "> ");
-            } else {
+            std::string raw_input(read_buffer_, length);
+            std::string response = command_dispatcher_.dispatch(*this, raw_input);
+            do_write(response);
+            if (!disconnecting_)
+            {
                 do_write("> ");
+                do_read();
             }
-
-            do_read();
         });
 }
 
 void Session::do_write(const std::string& msg)
 {
     auto self = shared_from_this();
-    auto buf = std::make_shared<std::string>(msg);
-    boost::asio::async_write(*socket_,
-        boost::asio::buffer(*buf),
-        [this, self, buf](const boost::system::error_code& ec, std::size_t /*length*/) {
+    boost::asio::async_write(
+        *socket_,
+        boost::asio::buffer(msg),
+        [this, self](boost::system::error_code ec, std::size_t /*length*/) {
             if (ec) {
-                std::cout << "Write error: " << ec.message() << std::endl;
+                std::cout << "Client disconnected during write" << std::endl;
                 return;
-            }
-            if (disconnecting_) {
-                boost::system::error_code close_ec;
-                socket_->close(close_ec);
             }
         });
 }
