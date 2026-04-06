@@ -1,8 +1,10 @@
 #include "MUD-Space.h"
 #include "Server.h"
+#include "Game.h"
 
 #include <iostream>
 #include <exception>
+#include <thread>
 
 using namespace std;
 
@@ -16,7 +18,13 @@ int main()
 
 		cout << "MUD-Space starting on port " << port << endl;
 		server.start_accept();
+		std::thread game_thread([&]() {
+			Game game;
+			game.run();
+			io_context.stop();
+		});
 		io_context.run();
+		game_thread.join();
 	}
 	catch (const exception& e) {
 		cerr << "Fatal: " << e.what() << endl;
