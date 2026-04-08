@@ -19,38 +19,26 @@ void CommandDispatcher::register_defaults()
         }
         std::ostringstream oss;
         oss << "You say: ";
-        for (std::size_t i = 0; i < cmd.args.size(); ++i) {
-            if (i > 0) oss << " ";
-            oss << cmd.args[i];
+        for (const auto& arg : cmd.args) {
+            oss << arg << " ";
         }
         oss << "\r\n";
         return oss.str();
     };
 
-    handlers_["help"] = [](Session& /*session*/, const ParsedCommand& /*cmd*/) -> std::string {
-        return "Available commands:\r\n"
-               "  look  - Observe your surroundings\r\n"
-               "  say   - Say something\r\n"
-               "  help  - Show this help\r\n"
-               "  quit  - Disconnect\r\n";
-    };
-
     handlers_["quit"] = [](Session& session, const ParsedCommand& /*cmd*/) -> std::string {
-        session.disconnect();
-        return "Goodbye, spacefarer.\r\n";
+        session.close();
+        return "Goodbye.\r\n";
     };
 }
 
 std::string CommandDispatcher::dispatch(Session& session, const ParsedCommand& cmd)
 {
-    if (cmd.verb.empty()) {
-        return "";
-    }
-
     auto it = handlers_.find(cmd.verb);
     if (it != handlers_.end()) {
         return it->second(session, cmd);
     }
-
-    return "Unknown command: " + cmd.verb + ". Type 'help' for a list of commands.\r\n";
+    else {
+        return "Huh?\r\n";
+    }
 }
