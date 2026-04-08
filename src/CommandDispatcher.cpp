@@ -34,6 +34,10 @@ void CommandDispatcher::register_defaults()
 
 std::string CommandDispatcher::dispatch(Session& session, const ParsedCommand& cmd)
 {
+    if (cmd.verb.empty()) {
+      return "";
+    }
+
     auto it = handlers_.find(cmd.verb);
     if (it != handlers_.end()) {
         return it->second(session, cmd);
