@@ -9,9 +9,9 @@
 ## Phase 2: Core MUD Loop
 - [x] Command parser (input tokenizer)
 - [x] Basic command dispatch (look, say, help, quit)
-- [ ] Game loop with tick-based updates
+- [x] Game loop with tick-based updates
 - [ ] Player session state management
-- [ ] Room/location data structures
+- [x] Room/location data structures
 - [ ] Broadcast messages to other sessions in same room
 
 ## Phase 3: World Building
