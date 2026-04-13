@@ -1,10 +1,15 @@
 #include "Game.h"
+#include "Room.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
 
 Game::Game()
 {
+    // Initialize the starting room
+    Room* startRoom = new Room("The Void", "An empty, dark space. Stars glimmer distantly.");
+    rooms_["void"] = startRoom;
+    std::cout << "Initialized room: " << startRoom->name << std::endl;
 }
 
 void Game::run()
