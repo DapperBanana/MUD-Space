@@ -23,10 +23,6 @@ void Game::run()
 
     while (running_)
     {
-        //Add new player to the game
-        //Player newPlayer = {"Test"};
-        //players_[players_.size()+1] = newPlayer;
-
         std::cout << "Game tick" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Simulate game tick
     }
@@ -35,4 +31,10 @@ void Game::run()
 void Game::stop()
 {
     running_ = false;
+}
+
+void Game::player_joins_game(Player& player)
+{
+    player.currentRoom = rooms_["void"];
+    std::cout << "Player " << player.name << " joined the game in room " << player.currentRoom->name << std::endl;
 }

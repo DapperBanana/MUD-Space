@@ -1,21 +1,20 @@
 #pragma once
 
+#include <map>
 #include <string>
-#include <unordered_map>
+#include "Player.h"
+
+class Room;
 
 class Game
 {
 public:
     Game();
     void run();
-
+    void stop();
+    void player_joins_game(Player& player);
 private:
+    void init();
     bool running_ = false;
-
-    struct Player
-    {
-        std::string name;
-    };
-
-    std::unordered_map<size_t, Player> players_;
+    std::map<std::string, Room*> rooms_;
 };
