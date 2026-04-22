@@ -6,6 +6,11 @@
 
 Game::Game()
 {
+    init();
+}
+
+void Game::init()
+{
     // Initialize the starting room
     Room* startRoom = new Room("The Void", "An empty, dark space. Stars glimmer distantly.");
     rooms_["void"] = startRoom;
@@ -23,6 +28,11 @@ void Game::run()
         //players_[players_.size()+1] = newPlayer;
 
         std::cout << "Game tick" << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Simulate game tick
     }
+}
+
+void Game::stop()
+{
+    running_ = false;
 }
