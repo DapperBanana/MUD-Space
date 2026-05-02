@@ -2,70 +2,100 @@
 #include "Server.h"
 #include "CommandParser.h"
 #include "CommandDispatcher.h"
+#include "Game.h"
 #include <iostream>
-
-using namespace boost::asio;
+#include <sstream>
+#include <algorithm>
 
 Session::Session(boost::asio::io_context& io_context, Server& server)
     : socket_(io_context), server_(server)
 {
 }
 
-Session::~Session()
-{
-    std::cout << "Session destroyed" << std::endl;
-}
-
-ip::tcp::socket& Session::socket()
+boost::asio::ip::tcp::socket& Session::socket()
 {
     return socket_;
 }
 
 void Session::start()
 {
-    server_.game_.player_joins_game(player_);
-    do_read();
-}
-
-void Session::do_read()
-{
-    auto self(shared_from_this());
-    socket_.async_read_some(buffer(data_, max_length),
-        [this, self](const boost::system::error_code& error, size_t bytes_transferred)
-        {
-            if (!error)
-            {
-                std::string message(data_, bytes_transferred);
-                process_message(message);
-                do_read();
-            }
-            else
-            {
+    player_.name = "unnamed";
+    boost::asio::async_read_until(socket_, buffer_, "\r",
+        [this, self = shared_from_this()](boost::system::error_code ec, std::size_t length) {
+            if (!ec) {
+                read_complete(ec, length);
+            } else {
                 server_.remove_session(self);
+                if (player_.currentRoom != nullptr) {
+                    auto it = std::find_if(player_.currentRoom->sessions.begin(), player_.currentRoom->sessions.end(),
+                        [this](const std::weak_ptr<Session>& wp) {
+                            if (auto sp = wp.lock()) {
+                                return sp.get() == this;
+                            } else {
+                                return false;
+                            }
+                        });
+                    if (it != player_.currentRoom->sessions.end()) {
+                        player_.currentRoom->sessions.erase(it);
+                    }
+                }
+
             }
         });
 }
 
-void Session::do_write(const std::string& message)
+void Session::read_complete(boost::system::error_code ec, std::size_t length)
 {
-    auto self(shared_from_this());
-    boost::asio::async_write(socket_, boost::asio::buffer(message), 
-        [this, self](boost::system::error_code ec, std::size_t /*length*/)
-        {
-            if (ec)
-            {
-                server_.remove_session(self);
-            }
-        });
+    std::string message(boost::asio::buffer_cast<const char*>(buffer_.data()), length);
+    buffer_.consume(length);
+
+    // Remove the carriage return character
+    message.erase(std::remove(message.begin(), message.end(), '\r'), message.end());
+
+    if (!message.empty()) {
+        std::cout << "Received message: " << message << std::endl;
+        process_command(message);
+    }
+
+    start(); // Start waiting for the next command
 }
 
-void Session::process_message(const std::string& message)
+void Session::process_command(const std::string& message)
 {
     CommandParser parser;
-    ParsedCommand command = parser.parse(message);
+    ParsedCommand cmd = parser.parse(message);
 
-    CommandDispatcher& dispatcher = server_.get_command_dispatcher();
-    std::string response = dispatcher.dispatch(*this, command);
+    CommandDispatcher dispatcher;
+    std::string response = dispatcher.dispatch(shared_from_this(), cmd);
 
-    do_write(response);
+    send(response);
+}
+
+void Session::send(const std::string& message)
+{
+    boost::asio::async_write(socket_, boost::asio::buffer(message), [](boost::system::error_code ec, std::size_t /*length*/) {
+        if (ec) {
+            std::cerr << "Error sending message: " << ec.message() << std::endl;
+        }
+    });
+}
+
+void Session::join_game(Room* room)
+{
+    if (player_.currentRoom != nullptr) {
+        //Remove the player from the current room's session list
+        auto it = std::find_if(player_.currentRoom->sessions.begin(), player_.currentRoom->sessions.end(),
+            [this](const std::weak_ptr<Session>& wp) {
+                if (auto sp = wp.lock()) {
+                    return sp.get() == this;
+                } else {
+                    return false;
+                }
+            });
+        if (it != player_.currentRoom->sessions.end()) {
+            player_.currentRoom->sessions.erase(it);
+        }
+    }
+    player_.currentRoom = room;
+    player_.currentRoom->sessions.push_back(weak_from_this());
 }
