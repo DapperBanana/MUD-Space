@@ -1,18 +1,16 @@
-#ifndef ROOM_H
-#define ROOM_H
+#pragma once
 
 #include <string>
 #include <vector>
-#include <map>
+#include <memory>
+
+class Session;
 
 class Room {
 public:
     std::string name;
     std::string description;
-    std::map<std::string, Room*> exits; // Direction -> Room*
-    std::vector<std::string> objects;
+    std::vector<std::weak_ptr<Session>> sessions; // Store weak pointers to avoid ownership issues
 
     Room(const std::string& name, const std::string& description);
 };
-
-#endif
