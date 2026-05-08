@@ -1,16 +1,13 @@
 #pragma once
 
 #include <string>
-#include <vector>
-#include <memory>
-
-class Session;
+#include <map>
 
 class Room {
 public:
     std::string name;
     std::string description;
-    std::vector<std::weak_ptr<Session>> sessions; // Store weak pointers to avoid ownership issues
+    std::map<std::string, Room*> exits; // Direction -> Room*
 
     Room(const std::string& name, const std::string& description);
 };

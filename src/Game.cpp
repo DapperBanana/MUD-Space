@@ -15,6 +15,17 @@ void Game::init()
     Room* startRoom = new Room("The Void", "An empty, dark space. Stars glimmer distantly.");
     rooms_["void"] = startRoom;
     std::cout << "Initialized room: " << startRoom->name << std::endl;
+
+    // Create a second room
+    Room* secondRoom = new Room("North Room", "A slightly less empty space. More stars.");
+    rooms_["north"] = secondRoom;
+    std::cout << "Initialized room: " << secondRoom->name << std::endl;
+
+    // Connect the rooms
+    startRoom->exits["north"] = secondRoom;
+    secondRoom->exits["south"] = startRoom;
+
+
 }
 
 void Game::run()
@@ -31,10 +42,4 @@ void Game::run()
 void Game::stop()
 {
     running_ = false;
-}
-
-void Game::player_joins_game(Player& player)
-{
-    player.currentRoom = rooms_["void"];
-    std::cout << "Player " << player.name << " joined the game in room " << player.currentRoom->name << std::endl;
 }
