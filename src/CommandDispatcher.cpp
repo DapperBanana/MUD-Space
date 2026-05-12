@@ -26,6 +26,19 @@ void CommandDispatcher::register_defaults()
         }
 
         std::string itemName = cmd.args[0];
-        return "Attempting to get: " + itemName + "\r\n";
+        Room* room = session.player_.currentRoom;
+        if (room == nullptr) {
+            return "You are floating in the void. There is nothing to get.\r\n";
+        }
+
+        for (size_t i = 0; i < room->items.size(); ++i) {
+            if (room->items[i].name == itemName) {
+                // Item found! Remove it from the room and add it to player inventory (not implemented yet)
+                room->items.erase(room->items.begin() + i);
+                return "You got the " + itemName + ".\r\n";
+            }
+        }
+
+        return "There is no " + itemName + " here.\r\n";
     };
 }
