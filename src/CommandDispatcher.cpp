@@ -19,4 +19,13 @@ void CommandDispatcher::register_defaults()
             return "You are floating in an empty void. Stars glimmer faintly in every direction.\r\n";
         }
     };
+
+    handlers_["get"] = [](Session& session, const ParsedCommand& cmd) -> std::string {
+        if (cmd.args.empty()) {
+            return "Get what?\r\n";
+        }
+
+        std::string itemName = cmd.args[0];
+        return "Attempting to get: " + itemName + "\r\n";
+    };
 }
